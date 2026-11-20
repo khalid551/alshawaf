@@ -350,6 +350,10 @@ footer{padding-block:34px;color:var(--muted);font-size:14px;display:flex;justify
           <input class="name-in" id="b-name" type="text" placeholder="مثال: مطعم الديرة" autocomplete="off">
         </div>
         <div class="field">
+          <h3>رقم جوالك</h3>
+          <input class="name-in" id="b-phone" type="tel" inputmode="tel" maxlength="20" placeholder="05xxxxxxxx" autocomplete="tel" style="direction:ltr;text-align:right">
+        </div>
+        <div class="field">
           <h3>النشاط</h3>
           <div class="opts" id="b-type"></div>
         </div>
@@ -379,10 +383,11 @@ footer{padding-block:34px;color:var(--muted);font-size:14px;display:flex;justify
         <pre id="b-msg"></pre>
         <div class="tier" id="b-price"></div>
         <div class="row">
-          <a class="btn fire sm" id="b-wa" href="#contact" hidden>أرسل الطلب</a>
+          <button class="btn fire sm" id="b-send" type="button">أرسل الطلب</button>
           <button class="btn sm" id="b-copy" type="button">انسخ الرسالة</button>
+          <a class="btn sm" id="b-wa" href="#contact" hidden>أرسله واتساب</a>
         </div>
-        <span class="note" id="b-sent" hidden>بقيت خطوة وحدة: اضغط «إرسال» في المحادثة اللي انفتحت، ونرد عليك خلال نصف ساعة.</span>
+        <span class="note" id="b-sent" role="status" aria-live="polite" hidden></span>
         <span class="note">السعر تقديري، ونأكده لك قبل ما نبدأ.</span>
       </div>
     </div>
@@ -484,6 +489,7 @@ footer{padding-block:34px;color:var(--muted);font-size:14px;display:flex;justify
 <script>
 // عدّل هذي القيم لما يجهز الحساب والرقم
 const CONTACT = { instagram: "", whatsapp: "966535252941" };
+const ORDER_EMAIL = "rendan64@gmail.com";
 
 document.documentElement.classList.add('js');
 const $ = s => document.querySelector(s);
@@ -645,10 +651,10 @@ function pills(host, list, multi){
 pills($('#b-type'), types, false); pills($('#b-sv'), SV, true);
 const range = $('#b-range'), nameIn = $('#b-name');
 range.addEventListener('input',()=>{ state.count=+range.value; render(); });
-nameIn.addEventListener('input',render); $('#b-extra').addEventListener('input',render); $('#b-code').addEventListener('input',render);
+nameIn.addEventListener('input',render); $('#b-phone').addEventListener('input',render); $('#b-extra').addEventListener('input',render); $('#b-code').addEventListener('input',render);
 function message(){
   const name = nameIn.value.trim(), extra = $('#b-extra').value.trim(), q = quote(), list = SV.filter(x=>state.sv.has(x)), p = pkg();
-  return `هلا الشواف لحلول الأعمال 👋\n${name?`أنا من ${name}`:'عندي مشروع'}، النشاط: ${state.type}.\n${list.length?`أبي: ${list.join('، ')}.`:'ما اخترت خدمة لين الحين.'}\nعدد الأصناف تقريباً: ${state.count}.${p?`\nالأقرب لي: ${p}.`:''}${extra?`\nوأبي بعد: ${extra}`:''}\nالتقدير: ${sar(q.fin)}${q.code?` (كود ${q.code})`:''}${q.gen?' + الخدمات العامة حسب الطلب':''}`;
+  return `هلا الشواف لحلول الأعمال 👋\n${name?`أنا من ${name}`:'عندي مشروع'}، النشاط: ${state.type}.\n${list.length?`أبي: ${list.join('، ')}.`:'ما اخترت خدمة لين الحين.'}\nعدد الأصناف تقريباً: ${state.count}.${p?`\nالأقرب لي: ${p}.`:''}${$('#b-phone').value.trim()?`\nجوالي: ${$('#b-phone').value.trim()}`:''}${extra?`\nوأبي بعد: ${extra}`:''}\nالتقدير: ${sar(q.fin)}${q.code?` (كود ${q.code})`:''}${q.gen?' + الخدمات العامة حسب الطلب':''}`;
 }
 function render(){
   const p = pkg();
@@ -661,10 +667,25 @@ function render(){
   const q = quote();
   $('#b-price').innerHTML = `المجموع: <b>${sar(q.s)}</b>${q.off?`<br>خصم الباقة: −${sar(q.off)}`:''}${q.pct?`<br>كود ${q.code}: −${q.pct}%`:''}${q.bad?'<br>الكود غير معروف':''}<br>المطلوب: <b>${sar(q.fin)}</b>${q.gen?'<br>الخدمات العامة تُحسب حسب الطلب':''}`;
   const wa = $('#b-wa');
-  if(CONTACT.whatsapp){ wa.hidden=false; wa.target='_blank'; wa.rel='noopener'; wa.href='https://wa.me/'+CONTACT.whatsapp.replace(/[^\d]/g,'')+'?text='+encodeURIComponent(message()); }
+  if(CONTACT.whatsapp){ wa.target='_blank'; wa.rel='noopener'; wa.href='https://wa.me/'+CONTACT.whatsapp.replace(/[^\d]/g,'')+'?text='+encodeURIComponent(message()); }
 }
 render(); showSvc(0,false);
-$('#b-wa').addEventListener('click',()=>{ $('#b-sent').hidden=false; });
+$('#b-send').addEventListener('click', async e=>{
+  const btn = e.currentTarget, note = $('#b-sent'), phone = $('#b-phone').value.trim();
+  const say = t => { note.hidden = false; note.textContent = t; };
+  if(phone.replace(/\D/g,'').length < 9){ say('اكتب رقم جوالك عشان نرد عليك.'); $('#b-phone').focus(); return; }
+  btn.disabled = true; btn.textContent = 'جارٍ الإرسال…';
+  try{
+    const r = await fetch('https://formsubmit.co/ajax/'+ORDER_EMAIL, {method:'POST', headers:{'Content-Type':'application/json','Accept':'application/json'},
+      body: JSON.stringify({_subject:'طلب جديد من الموقع: '+(nameIn.value.trim()||'بدون اسم'), _template:'table', _captcha:'false', 'الجوال':phone, 'الطلب':message()})});
+    const j = await r.json();
+    if(!r.ok || String(j.success) !== 'true') throw new Error('send');
+    say('تم إرسال طلبك ✓ وسنرد عليك خلال نصف ساعة.'); btn.textContent = 'تم الإرسال ✓';
+  }catch(err){
+    btn.disabled = false; btn.textContent = 'أرسل الطلب';
+    say('ما قدرنا نرسل الطلب الحين. جرّب مرة ثانية، أو أرسله من زر الواتساب.'); $('#b-wa').hidden = false;
+  }
+});
 $('#b-copy').addEventListener('click',e=>{
   const btn = e.currentTarget, label = 'انسخ الرسالة';
   const done = ()=>{ btn.textContent='تم النسخ ✓'; setTimeout(()=>btn.textContent=label,1600); };
