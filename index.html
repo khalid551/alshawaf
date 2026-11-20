@@ -362,6 +362,10 @@ footer{padding-block:34px;color:var(--muted);font-size:14px;display:flex;justify
           <div class="opts" id="b-sv"></div>
         </div>
         <div class="field">
+          <h3>وأي خدمات عامة تحتاج؟</h3>
+          <div class="opts" id="b-gen"></div>
+        </div>
+        <div class="field">
           <h3>شي ثاني في بالك؟</h3>
           <input class="name-in" id="b-extra" type="text" maxlength="200" placeholder="مثال: ملابس للموظفين، تجديد الرخصة، جرد المخزون" autocomplete="off">
         </div>
@@ -536,21 +540,25 @@ const state = {type:'مطعم', sv:new Set(['تصوير المنتجات','ال�
 /* الأسعار وأكواد الخصم: عدّلها من هنا */
 const PRICE = {'الشعار والهوية':900,'المنيو':350,'حساب إنستغرام':1200,'ريلز':450,'شخصية للمشروع':500,'واجهة المحل':400,'محتوى شهري':800};
 const PHOTO_EACH = 15, PHOTO_MIN = 300;
+/* الخدمات العامة: السعر أتعابنا فقط، والرسوم الحكومية والمواد على تكلفتها */
+const GENP = {'تجديد سجل أو رخصة':250,'شهادات صحية للموظفين':150,'ملف خرائط قوقل':200,'واتساب أعمال وكتالوج':200,'التسجيل في تطبيق توصيل':300,'ملابس الموظفين':300,'أكياس وعلب وستيكرات':350,'لوحات وباركود المنيو':200,'ترتيب المحل وطريقة العرض':400,'جرد المخزون':350,'قوائم الفتح والإغلاق':150,'تكلفة الأصناف والتسعير':400,'الكاشير والفاتورة الإلكترونية':350,'مقارنة عروض الموردين':250,'إعلان توظيف وفرز المتقدمين':300,'تنسيق صيانة':150,'تجهيز افتتاح أو فعالية':600};
+state.gen = new Set();
 const CODES = {'AWAL10':10,'JAR15':15,'SHAREEK':100};
 const MID = ['الشعار والهوية','المنيو','حساب إنستغرام'], FULL = [...MID,'شخصية للمشروع','واجهة المحل','محتوى شهري'];
 const sar = n => n.toLocaleString('en-US')+' ر.س';
 function priceLabel(k){
   if(k==='تصوير المنتجات') return `${PHOTO_EACH} ر.س للصنف، وأقل طلب ${sar(PHOTO_MIN)}`;
-  if(k==='خدمات عامة') return 'تكلفة التنفيذ + 15% تنسيق، وأقل طلب 100 ر.س';
+  if(k==='خدمات عامة') return 'من 150 ر.س للخدمة، وتختارها من «جهّز طلبك»';
   if(k==='محتوى شهري') return sar(PRICE[k])+' في الشهر';
   if(k==='ريلز') return sar(PRICE[k])+' للريل';
   return sar(PRICE[k]);
 }
 function quote(){
   let s = 0; state.sv.forEach(x=>{ if(x==='تصوير المنتجات') s += Math.max(PHOTO_MIN, PHOTO_EACH*state.count); else if(PRICE[x]) s += PRICE[x]; });
+  state.gen.forEach(x=>{ s += GENP[x]||0; });
   const has = a => a.every(x=>state.sv.has(x)), off = has(FULL)?500:has(MID)?250:0;
   const el = document.querySelector('#b-code'), raw = el ? el.value.trim().toUpperCase() : '', pct = CODES[raw]||0, sub = s-off;
-  return {s, off, sub, pct, code: pct?raw:'', bad: !!raw&&!pct, fin: Math.round(sub*(100-pct)/100), gen: state.sv.has('خدمات عامة')};
+  return {s, off, sub, pct, code: pct?raw:'', bad: !!raw&&!pct, fin: Math.round(sub*(100-pct)/100), gen: state.sv.has('خدمات عامة')||state.gen.size>0};
 }
 
 /* تبديل الخدمات */
@@ -649,12 +657,17 @@ function pills(host, list, multi){
   });
 }
 pills($('#b-type'), types, false); pills($('#b-sv'), SV, true);
+Object.keys(GENP).forEach(v=>{
+  const b = document.createElement('button'); b.type='button'; b.className='opt'; b.dataset.v=v; b.textContent = v+' · '+GENP[v];
+  b.addEventListener('click',()=>{ state.gen.has(v)?state.gen.delete(v):state.gen.add(v); if(state.gen.size) state.sv.add('خدمات عامة'); render(); showSvc(curSvc,false); });
+  $('#b-gen').append(b);
+});
 const range = $('#b-range'), nameIn = $('#b-name');
 range.addEventListener('input',()=>{ state.count=+range.value; render(); });
 nameIn.addEventListener('input',render); $('#b-phone').addEventListener('input',render); $('#b-extra').addEventListener('input',render); $('#b-code').addEventListener('input',render);
 function message(){
   const name = nameIn.value.trim(), extra = $('#b-extra').value.trim(), q = quote(), list = SV.filter(x=>state.sv.has(x)), p = pkg();
-  return `هلا الشواف لحلول الأعمال 👋\n${name?`أنا من ${name}`:'عندي مشروع'}، النشاط: ${state.type}.\n${list.length?`أبي: ${list.join('، ')}.`:'ما اخترت خدمة لين الحين.'}\nعدد الأصناف تقريباً: ${state.count}.${p?`\nالأقرب لي: ${p}.`:''}${$('#b-phone').value.trim()?`\nجوالي: ${$('#b-phone').value.trim()}`:''}${extra?`\nوأبي بعد: ${extra}`:''}\nالتقدير: ${sar(q.fin)}${q.code?` (كود ${q.code})`:''}${q.gen?' + الخدمات العامة حسب الطلب':''}`;
+  return `هلا الشواف لحلول الأعمال 👋\n${name?`أنا من ${name}`:'عندي مشروع'}، النشاط: ${state.type}.\n${list.length?`أبي: ${list.join('، ')}.`:'ما اخترت خدمة لين الحين.'}${state.gen.size?`\nخدمات عامة: ${[...state.gen].join('، ')}.`:''}\nعدد الأصناف تقريباً: ${state.count}.${p?`\nالباقة الأقرب لاختياري: ${p}.`:''}${$('#b-phone').value.trim()?`\nجوالي: ${$('#b-phone').value.trim()}`:''}${extra?`\nوأبي بعد: ${extra}`:''}\nالتقدير: ${sar(q.fin)}${q.code?` (كود ${q.code})`:''}${q.gen?' (غير الرسوم الحكومية والمواد)':''}`;
 }
 function render(){
   const p = pkg();
@@ -662,10 +675,11 @@ function render(){
   $('#b-tier').innerHTML = p ? `الأقرب لاختيارك: <b>${p}</b>${state.sv.has('تصوير المنتجات')?`، مع تصوير ${state.count} صنف تقريباً.`:'.'}` : 'اختر خدمة وحدة على الأقل.';
   [...$('#b-type').children].forEach(b=>b.setAttribute('aria-pressed', b.dataset.v===state.type));
   [...$('#b-sv').children].forEach(b=>b.setAttribute('aria-pressed', state.sv.has(b.dataset.v)));
+  [...$('#b-gen').children].forEach(b=>b.setAttribute('aria-pressed', state.gen.has(b.dataset.v)));
   [...plansEl.children].forEach((b,i)=>b.setAttribute('aria-pressed', plans[i].n===p));
   $('#b-msg').textContent = message();
   const q = quote();
-  $('#b-price').innerHTML = `المجموع: <b>${sar(q.s)}</b>${q.off?`<br>خصم الباقة: −${sar(q.off)}`:''}${q.pct?`<br>كود ${q.code}: −${q.pct}%`:''}${q.bad?'<br>الكود غير معروف':''}<br>المطلوب: <b>${sar(q.fin)}</b>${q.gen?'<br>الخدمات العامة تُحسب حسب الطلب':''}`;
+  $('#b-price').innerHTML = `المجموع: <b>${sar(q.s)}</b>${q.off?`<br>خصم الباقة: −${sar(q.off)}`:''}${q.pct?`<br>كود ${q.code}: −${q.pct}%`:''}${q.bad?'<br>الكود غير معروف':''}<br>المطلوب: <b>${sar(q.fin)}</b>${q.gen?'<br>أسعار الخدمات العامة أتعابنا، والرسوم الحكومية والمواد على تكلفتها':''}`;
   const wa = $('#b-wa');
   if(CONTACT.whatsapp){ wa.target='_blank'; wa.rel='noopener'; wa.href='https://wa.me/'+CONTACT.whatsapp.replace(/[^\d]/g,'')+'?text='+encodeURIComponent(message()); }
 }
