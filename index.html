@@ -10,7 +10,7 @@
 <title>الشواف لحلول الأعمال</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alexandria:wght@500;700;800;900&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alexandria:wght@500;700;800;900&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=Syne:wght@800&display=swap">
 <style>
 /* التخطيط: نفس هوية موقع «شيف حسين» — ورق مربعات أبيض، بنفسجي، أزرار بظل صلب، شريط تنقل عائم.
    كل قسم فيه شي ينضغط: كلمة تتبدل، كرت يميل، خدمات تتبدل، معرض يتفلتر ويكبر، مقارنة تنسحب، طلب ينبني. */
@@ -42,8 +42,9 @@ button{font:inherit;color:inherit}
   background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
   border:1px solid var(--line);border-radius:18px;padding:10px 14px;box-shadow:0 8px 30px -20px rgba(20,18,16,.4);margin-top:12px}
 .brand{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:800;font-size:17px;text-decoration:none;color:var(--ink)}
-.brand b{display:block;line-height:1.3}
-.brand small{display:block;font:500 11px/1.3 var(--body);letter-spacing:.06em;color:var(--muted);direction:ltr;text-align:right}
+.brand .wm{display:block;direction:ltr;text-align:left}
+.brand b{display:block;font:800 24px/1.05 "Syne","Alexandria",sans-serif;letter-spacing:-.01em;text-transform:uppercase}
+.brand small{display:block;font:500 11px/1.5 var(--body);letter-spacing:.04em;color:var(--muted)}
 .brand i{width:34px;height:34px;border-radius:10px;background:var(--flame);color:var(--flame-ink);display:grid;place-items:center;font-style:normal;font-size:18px}
 .links{display:flex;gap:4px}
 .links a{font-size:15px;font-weight:500;color:var(--muted);text-decoration:none;padding:6px 12px;border-radius:999px;transition:background .2s,color .2s}
@@ -262,7 +263,7 @@ footer{padding-block:34px;color:var(--muted);font-size:14px;display:flex;justify
 <div class="wrap" dir="rtl" lang="ar">
 
   <nav class="nav" aria-label="التنقل">
-    <a class="brand" href="#top"><span><b>الشواف لحلول الأعمال</b><small>Al Shawaf Business Solutions</small></span></a>
+    <a class="brand" href="#top"><span class="wm"><b>Al Shawaf</b><small>Business Solutions · الشواف لحلول الأعمال</small></span></a>
     <div class="links">
       <a href="#general">خدمات عامة</a>
       <a href="#services">التصوير والهوية</a>
