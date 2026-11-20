@@ -698,6 +698,33 @@ function render(){
   if(CONTACT.whatsapp){ wa.target='_blank'; wa.rel='noopener'; wa.href='https://wa.me/'+CONTACT.whatsapp.replace(/[^\d]/g,'')+'?text='+encodeURIComponent(message()); }
 }
 render(); showSvc(0,false);
+function orderBrief(phone){
+  const name = nameIn.value.trim(), ig = $('#b-ig').value.trim(), extra = $('#b-extra').value.trim(), q = quote(), L = [];
+  const main = SV.filter(x=>state.sv.has(x) && x!=='خدمات عامة'), gen = [...state.gen];
+  L.push('طلب عميل جديد — الشواف لحلول الأعمال');
+  L.push('التاريخ: '+new Date().toLocaleDateString('ar-u-ca-gregory-nu-latn',{year:'numeric',month:'long',day:'numeric'}));
+  L.push('', '== العميل ==');
+  L.push('المشروع: '+(name||'لم يكتب الاسم'), 'النشاط: '+state.type, 'الجوال: '+phone);
+  if(ig) L.push('إنستغرام: '+ig);
+  L.push('عدد الأصناف تقريباً: '+state.count);
+  L.push('', '== الخدمات المطلوبة ==');
+  if(!main.length && !gen.length) L.push('لم يختر خدمة محددة.');
+  main.forEach((x,i)=> L.push((i+1)+'. '+x+' — '+(x==='تصوير المنتجات' ? sar(Math.max(PHOTO_MIN, PHOTO_EACH*state.count))+' ('+state.count+' صنف)' : sar(PRICE[x]))));
+  if(gen.length){ L.push('', '== خدمات عامة =='); gen.forEach((x,i)=> L.push((i+1)+'. '+x+' — '+sar(GENP[x]))); }
+  if(extra) L.push('', '== طلب إضافي بكلام العميل ==', extra);
+  L.push('', '== الفاتورة ==', 'المجموع: '+sar(q.s));
+  if(q.off) L.push('خصم الباقة: −'+sar(q.off));
+  if(q.code) L.push('كود الخصم: '+q.code+' (−'+q.pct+'%)');
+  L.push('المطلوب من العميل: '+sar(q.fin));
+  if(q.gen) L.push('أسعار الخدمات العامة أتعاب فقط، والرسوم الحكومية والمواد على تكلفتها.');
+  L.push('', '== المطلوب منك يا Claude ==');
+  L.push('1. افتح مشروعاً جديداً لهذا العميل واكتب ملف العميل (brief) من البيانات أعلاه.');
+  L.push('2. اكتب خطة العمل كاملة: مراحل كل خدمة مطلوبة بالترتيب، ومن ينفّذ كل خطوة (حسين، عبدالمحسن، Claude، أو العميل).');
+  L.push('3. اكتب ما أحتاجه من العميل لأبدأ، ورسالة جاهزة أرسلها له على جواله.');
+  L.push('4. اكتب سير العمل: ما الذي يُعرض على العميل ليوافق عليه، ومتى.');
+  L.push('5. سجّل المشروع في لوحة المتابعة حسب تعليماتها.');
+  return L.join('\n');
+}
 function orderData(phone){
   const name = nameIn.value.trim(), ig = $('#b-ig').value.trim(), extra = $('#b-extra').value.trim(), p = pkg();
   const d = {_subject:'طلب جديد من الموقع: '+(name||'بدون اسم'), _template:'table', _captcha:'false'};
@@ -717,7 +744,7 @@ $('#b-send').addEventListener('click', async e=>{
   btn.disabled = true; btn.textContent = 'جارٍ الإرسال…';
   try{
     const r = await fetch('https://formsubmit.co/ajax/'+ORDER_EMAIL, {method:'POST', headers:{'Content-Type':'application/json','Accept':'application/json'},
-      body: JSON.stringify(orderData(phone))});
+      body: JSON.stringify({_subject:'طلب جديد: '+(nameIn.value.trim()||state.type), _template:'box', _captcha:'false', 'انسخ النص التالي والصقه في Claude Code': orderBrief(phone)})});
     const j = await r.json();
     if(!r.ok || String(j.success) !== 'true') throw new Error('send');
     say('تم إرسال طلبك ✓ وسنرد عليك خلال نصف ساعة.'); btn.textContent = 'تم الإرسال ✓';
