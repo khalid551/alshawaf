@@ -550,6 +550,16 @@ state.gen = new Set();
 const CODES = {'AWAL10':10,'JAR15':15,'SHAREEK':100};
 const MID = ['الشعار والهوية','المنيو','حساب إنستغرام'], FULL = [...MID,'شخصية للمشروع','واجهة المحل','محتوى شهري'];
 const sar = n => n.toLocaleString('en-US')+' ر.س';
+function invoiceRows(){
+  const rows = [], q = quote();
+  SV.filter(x=>state.sv.has(x) && x!=='خدمات عامة').forEach(x=> rows.push([x, x==='تصوير المنتجات' ? sar(Math.max(PHOTO_MIN, PHOTO_EACH*state.count))+' ('+state.count+' صنف)' : sar(PRICE[x])]));
+  state.gen.forEach(x=> rows.push(['خدمة عامة: '+x, sar(GENP[x])]));
+  rows.push(['المجموع', sar(q.s)]);
+  if(q.off) rows.push(['خصم الباقة', '−'+sar(q.off)]);
+  if(q.code) rows.push(['كود الخصم', q.code+' (−'+q.pct+'%)']);
+  rows.push(['المطلوب', sar(q.fin)]);
+  return rows;
+}
 function priceLabel(k){
   if(k==='تصوير المنتجات') return `${PHOTO_EACH} ر.س للصنف، وأقل طلب ${sar(PHOTO_MIN)}`;
   if(k==='خدمات عامة') return 'من 150 ر.س للخدمة، وتختارها من «جهّز طلبك»';
@@ -683,11 +693,23 @@ function render(){
   [...plansEl.children].forEach((b,i)=>b.setAttribute('aria-pressed', plans[i].n===p));
   $('#b-msg').textContent = message();
   const q = quote();
-  $('#b-price').innerHTML = `المجموع: <b>${sar(q.s)}</b>${q.off?`<br>خصم الباقة: −${sar(q.off)}`:''}${q.pct?`<br>كود ${q.code}: −${q.pct}%`:''}${q.bad?'<br>الكود غير معروف':''}<br>المطلوب: <b>${sar(q.fin)}</b>${q.gen?'<br>أسعار الخدمات العامة أتعابنا، والرسوم الحكومية والمواد على تكلفتها':''}`;
+  $('#b-price').innerHTML = invoiceRows().map(([k,v])=>`${k}: <b>${v}</b>`).join('<br>') + (q.bad?'<br>الكود غير معروف':'') + (q.gen?'<br>أسعار الخدمات العامة أتعابنا، والرسوم الحكومية والمواد على تكلفتها':'');
   const wa = $('#b-wa');
   if(CONTACT.whatsapp){ wa.target='_blank'; wa.rel='noopener'; wa.href='https://wa.me/'+CONTACT.whatsapp.replace(/[^\d]/g,'')+'?text='+encodeURIComponent(message()); }
 }
 render(); showSvc(0,false);
+function orderData(phone){
+  const name = nameIn.value.trim(), ig = $('#b-ig').value.trim(), extra = $('#b-extra').value.trim(), p = pkg();
+  const d = {_subject:'طلب جديد من الموقع: '+(name||'بدون اسم'), _template:'table', _captcha:'false'};
+  d['اسم المشروع'] = name||'لم يُكتب'; d['النشاط'] = state.type; d['الجوال'] = phone;
+  if(ig) d['إنستغرام المشروع'] = ig;
+  d['عدد الأصناف تقريباً'] = String(state.count);
+  if(p) d['الباقة الأقرب'] = p;
+  if(extra) d['طلب إضافي'] = extra;
+  invoiceRows().forEach(([k,v])=>{ d[k] = v; });
+  if(quote().gen) d['ملاحظة'] = 'أسعار الخدمات العامة أتعاب فقط، والرسوم الحكومية والمواد على تكلفتها.';
+  return d;
+}
 $('#b-send').addEventListener('click', async e=>{
   const btn = e.currentTarget, note = $('#b-sent'), phone = $('#b-phone').value.trim();
   const say = t => { note.hidden = false; note.textContent = t; };
@@ -695,7 +717,7 @@ $('#b-send').addEventListener('click', async e=>{
   btn.disabled = true; btn.textContent = 'جارٍ الإرسال…';
   try{
     const r = await fetch('https://formsubmit.co/ajax/'+ORDER_EMAIL, {method:'POST', headers:{'Content-Type':'application/json','Accept':'application/json'},
-      body: JSON.stringify({_subject:'طلب جديد من الموقع: '+(nameIn.value.trim()||'بدون اسم'), _template:'table', _captcha:'false', 'الجوال':phone, 'الطلب':message()})});
+      body: JSON.stringify(orderData(phone))});
     const j = await r.json();
     if(!r.ok || String(j.success) !== 'true') throw new Error('send');
     say('تم إرسال طلبك ✓ وسنرد عليك خلال نصف ساعة.'); btn.textContent = 'تم الإرسال ✓';
