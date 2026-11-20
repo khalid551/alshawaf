@@ -346,8 +346,12 @@ footer{padding-block:34px;color:var(--muted);font-size:14px;display:flex;justify
     <div class="builder rv">
       <div>
         <div class="field">
-          <h3>اسم مشروعك</h3>
+          <h3>اسم مشروعك <small style="font-weight:500;opacity:.6">(اختياري)</small></h3>
           <input class="name-in" id="b-name" type="text" placeholder="مثال: مطعم الديرة" autocomplete="off">
+        </div>
+        <div class="field">
+          <h3>حساب مشروعك في إنستغرام <small style="font-weight:500;opacity:.6">(اختياري)</small></h3>
+          <input class="name-in" id="b-ig" type="text" maxlength="120" placeholder="@اسم_الحساب أو الرابط" autocomplete="off" style="direction:ltr;text-align:right">
         </div>
         <div class="field">
           <h3>رقم جوالك</h3>
@@ -664,10 +668,10 @@ Object.keys(GENP).forEach(v=>{
 });
 const range = $('#b-range'), nameIn = $('#b-name');
 range.addEventListener('input',()=>{ state.count=+range.value; render(); });
-nameIn.addEventListener('input',render); $('#b-phone').addEventListener('input',render); $('#b-extra').addEventListener('input',render); $('#b-code').addEventListener('input',render);
+nameIn.addEventListener('input',render); $('#b-phone').addEventListener('input',render); $('#b-ig').addEventListener('input',render); $('#b-extra').addEventListener('input',render); $('#b-code').addEventListener('input',render);
 function message(){
   const name = nameIn.value.trim(), extra = $('#b-extra').value.trim(), q = quote(), list = SV.filter(x=>state.sv.has(x)), p = pkg();
-  return `هلا الشواف لحلول الأعمال 👋\n${name?`أنا من ${name}`:'عندي مشروع'}، النشاط: ${state.type}.\n${list.length?`أبي: ${list.join('، ')}.`:'ما اخترت خدمة لين الحين.'}${state.gen.size?`\nخدمات عامة: ${[...state.gen].join('، ')}.`:''}\nعدد الأصناف تقريباً: ${state.count}.${p?`\nالباقة الأقرب لاختياري: ${p}.`:''}${$('#b-phone').value.trim()?`\nجوالي: ${$('#b-phone').value.trim()}`:''}${extra?`\nوأبي بعد: ${extra}`:''}\nالتقدير: ${sar(q.fin)}${q.code?` (كود ${q.code})`:''}${q.gen?' (غير الرسوم الحكومية والمواد)':''}`;
+  return `هلا الشواف لحلول الأعمال 👋\n${name?`أنا من ${name}`:'عندي مشروع'}، النشاط: ${state.type}.\n${list.length?`أبي: ${list.join('، ')}.`:'ما اخترت خدمة لين الحين.'}${state.gen.size?`\nخدمات عامة: ${[...state.gen].join('، ')}.`:''}\nعدد الأصناف تقريباً: ${state.count}.${p?`\nالباقة الأقرب لاختياري: ${p}.`:''}${$('#b-ig').value.trim()?`\nإنستغرام المشروع: ${$('#b-ig').value.trim()}`:''}${$('#b-phone').value.trim()?`\nجوالي: ${$('#b-phone').value.trim()}`:''}${extra?`\nوأبي بعد: ${extra}`:''}\nالتقدير: ${sar(q.fin)}${q.code?` (كود ${q.code})`:''}${q.gen?' (غير الرسوم الحكومية والمواد)':''}`;
 }
 function render(){
   const p = pkg();
